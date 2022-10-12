@@ -41,6 +41,14 @@ router.get('/', (req, res) => {
 });
 
 
+const admin = require("firebase-admin");
+
+const serviceAccount = require("../config/masterpick-c38ce-firebase-adminsdk-e31xj-af720fb49b.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 
 
 const onSignUp = async (req, res) => {
@@ -1620,7 +1628,7 @@ const getMasterContents = async (req, res) => {
     try {
         let { table, pk, order, desc, is_subscribe, user_pk, overlap_list, status } = req.body;
 
-
+        console.log(req.body)
         let sql = "";
         let tableSelectStr = ``;
         if (table == 'master_event') {
@@ -1651,6 +1659,7 @@ const getMasterContents = async (req, res) => {
             orderStr = ` ORDER BY ${table}_table.${order} ${desc ? 'DESC' : 'ASC'}`
         }
         sql = `${selectStr} ${whereStr} ${orderStr}`;
+        console.log(sql)
         db.query(sql, (err, result) => {
             if (err) {
                 console.log(err)
