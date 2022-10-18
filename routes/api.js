@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken')
 
 const { checkLevel, getSQLnParams, getUserPKArrStrWithNewPK,
     isNotNullOrUndefined, namingImagesPath, nullResponse,
-    lowLevelResponse, response, removeItems, returnMoment, formatPhoneNumber
+    lowLevelResponse, response, removeItems, returnMoment, formatPhoneNumber, sendAlarm
 } = require('../util')
 const {
     getRowsNumWithKeyword, getRowsNum, getAllDatas,
@@ -39,17 +39,6 @@ router.get('/', (req, res) => {
     console.log("back-end initialized")
     res.send('back-end initialized')
 });
-
-
-const admin = require("firebase-admin");
-
-const serviceAccount = require("../config/masterpick-c38ce-firebase-adminsdk-e31xj-af720fb49b.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-
 
 const onSignUp = async (req, res) => {
     try {
@@ -1449,6 +1438,57 @@ const updateNotice = (req, res) => {
         return response(req, res, -200, "서버 에러 발생", [])
     }
 }
+const addAlarm = (req, res) => {
+    try {
+        // 바로할지, 0-1, 요일, 시간, 
+        const { title, note, type, start_date, days, time } = req.body;
+
+
+        db.query("INSERT INTO alarm_table (title, note, type, start_date, days, time) VALUES (?, ?, ?, ?, ?, ?)", [title, note, type, start_date, days, time], async (err, result) => {
+            if (err) {
+                console.log(err)
+                response(req, res, -200, "알람 추가 실패", [])
+            }
+            else {
+                if (type == 0) {
+                    sendAlarm(title, note, "alarm", result.insertId);
+                    insertQuery("INSERT INTO alarm_log_table (title, note, item_table, item_pk) VALUES (?, ?, ?, ?)", [title, note, "alarm", result.insertId])
+                }
+                await db.query("UPDATE alarm_table SET sort=? WHERE pk=?", [result.insertId, result.insertId], (err, result) => {
+                    if (err) {
+                        console.log(err)
+                        response(req, res, -200, "알람 추가 실패", [])
+                    }
+                    else {
+                        response(req, res, 200, "알람 추가 성공", [])
+                    }
+                })
+            }
+        })
+    } catch (err) {
+        console.log(err)
+        response(req, res, -200, "서버 에러 발생", [])
+    }
+}
+const updateAlarm = (req, res) => {
+    try {
+        // 바로할지, 0-1, 요일, 시간, 
+        const { title, note, type, start_date, days, time, pk } = req.body;
+        db.query("UPDATE alarm_table SET title=?, note=?, type=?, start_date=?, days=?, time=? WHERE pk=?", [title, note, type, start_date, days, time, pk], (err, result) => {
+            if (err) {
+                console.log(err)
+                response(req, res, -200, "알람 수정 실패", [])
+            }
+            else {
+                response(req, res, 200, "알람 수정 성공", [])
+            }
+        })
+
+    } catch (err) {
+        console.log(err)
+        response(req, res, -200, "서버 에러 발생", [])
+    }
+}
 const addMustRead = (req, res) => {
     try {
         const { title, note, user_pk } = req.body;
@@ -2118,7 +2158,7 @@ const changeItemSequence = (req, res) => {
 module.exports = {
     onLoginById, getUserToken, onLogout, checkExistId, checkExistNickname, sendSms, kakaoCallBack, editMyInfo, uploadProfile, onLoginBySns,//auth
     getUsers, getOneWord, getOneEvent, getItems, getItem, getHomeContent, getSetting, getVideoContent, getChannelList, getVideo, onSearchAllItem, findIdByPhone, findAuthByIdAndPhone, getMasterContents, getMainContent, getUserContent, getMasterContent,//select
-    addMaster, onSignUp, addOneWord, addOneEvent, addItem, addIssueCategory, addNoteImage, addVideo, addChannel, addFeatureCategory, addNotice, addSubscribeContent, addSubscribe, addMustRead, //insert 
-    updateUser, updateItem, updateIssueCategory, updateVideo, updateMaster, updateSetting, updateStatus, updateChannel, updateFeatureCategory, updateNotice, onTheTopItem, changeItemSequence, changePassword, updateMasterContent, updateSubscribeContent, editMainContent, updateMustRead,//update
+    addMaster, onSignUp, addOneWord, addOneEvent, addItem, addIssueCategory, addNoteImage, addVideo, addChannel, addFeatureCategory, addNotice, addSubscribeContent, addSubscribe, addMustRead, addAlarm, //insert 
+    updateUser, updateItem, updateIssueCategory, updateVideo, updateMaster, updateSetting, updateStatus, updateChannel, updateFeatureCategory, updateNotice, onTheTopItem, changeItemSequence, changePassword, updateMasterContent, updateSubscribeContent, editMainContent, updateMustRead, updateAlarm,//update
     deleteItem
 };
