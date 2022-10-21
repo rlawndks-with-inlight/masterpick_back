@@ -16,7 +16,7 @@ const { checkLevel, getSQLnParams, getUserPKArrStrWithNewPK,
 const {
     getRowsNumWithKeyword, getRowsNum, getAllDatas,
     getDatasWithKeywordAtPage, getDatasAtPage,
-    getKioskList, getItemRows, getItemList, dbQueryList, dbQueryRows
+    getKioskList, getItemRows, getItemList, dbQueryList, dbQueryRows, insertQuery, getTableAI
 } = require('../query-util')
 
 const db = require('../config/db')
@@ -1974,6 +1974,14 @@ const editMainContent = (req, res) => {
                 value = '/image/' + req.files.main[0].fieldname + '/' + req.files.main[0].filename;
                 zColumn = [value];
                 sql = `UPDATE main_table SET main_img=? WHERE pk=?`;
+            }
+        } else if (category == 'header_img') {
+            if (!req.files.main) {
+                return response(req, res, 100, "success", [])
+            } else {
+                value = '/image/' + req.files.main[0].fieldname + '/' + req.files.main[0].filename;
+                zColumn = [value];
+                sql = `UPDATE main_table SET header_img=? WHERE pk=?`;
             }
         } else if (category == 'best_master_yield_list') {
             value = best_master_yield_list;
