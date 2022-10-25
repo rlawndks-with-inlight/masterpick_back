@@ -275,7 +275,7 @@ const uploadProfile = (req, res) => {
 }
 const editMyInfo = (req, res) => {
     try {
-        let { pw, nickname, newPw, phone, id } = req.body;
+        let { pw, nickname, newPw, phone, id, type } = req.body;
         crypto.pbkdf2(pw, salt, saltRounds, pwBytes, 'sha512', async (err, decoded) => {
             // bcrypt.hash(pw, salt, async (err, hash) => {
             let hash = decoded.toString('base64')
@@ -290,7 +290,7 @@ const editMyInfo = (req, res) => {
                     console.log(err);
                     response(req, res, -100, "서버 에러 발생", [])
                 } else {
-                    if (result.length > 0) {
+                    if (result.length > 0 || type!=0 ) {
                         if (newPw) {
                             await crypto.pbkdf2(newPw, salt, saltRounds, pwBytes, 'sha512', async (err, decoded) => {
                                 // bcrypt.hash(pw, salt, async (err, hash) => {
