@@ -1675,7 +1675,6 @@ const getMasterContents = async (req, res) => {
             orderStr = ` ORDER BY ${table}_table.${order} ${desc ? 'DESC' : 'ASC'}`
         }
         sql = `${selectStr} ${whereStr} ${orderStr}`;
-        console.log(sql)
         db.query(sql, (err, result) => {
             if (err) {
                 console.log(err)
@@ -1698,7 +1697,6 @@ const updateMasterContent = (req, res) => {
             return response(req, res, -100, "필요값이 비어있습니다.", [])
         } else {
             let joins = columns.join();
-            console.log(joins)
             db.query(`DELETE FROM ${table}_table WHERE master_pk=?`, [master_pk], async (err, result) => {
                 if (err) {
                     console.log(err)
