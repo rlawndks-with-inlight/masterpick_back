@@ -99,8 +99,10 @@ const onSignUp = async (req, res) => {
 }
 const onLoginById = async (req, res) => {
     try {
-        console.log(req.body)
         let { id, pw } = req.body;
+        if(!id){
+            return response(req, res, -100, "필요값이 비어있습니다.", [])
+        }
         db.query('SELECT * FROM user_table WHERE id=?', [id], async (err, result1) => {
             if (err) {
                 console.log(err)
@@ -158,6 +160,9 @@ const onLoginBySns = (req, res) => {
     try {
         let { id, typeNum, name, nickname, phone, user_level, profile_img } = req.body;
         console.log(req.body)
+        if(!id){
+            return response(req, res, -100, "필요값이 비어있습니다.", []);
+        }
         db.query("SELECT * FROM user_table WHERE id=? AND type=?", [id, typeNum], async (err, result) => {
             if (err) {
                 console.log(err)
