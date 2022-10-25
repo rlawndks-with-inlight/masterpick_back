@@ -155,8 +155,8 @@ const onLoginById = async (req, res) => {
 }
 const onLoginBySns = (req, res) => {
     try {
-        console.log(req.body)
         let { id, typeNum, name, nickname, phone, user_level, profile_img } = req.body;
+        console.log(req.body)
         db.query("SELECT * FROM user_table WHERE id=? AND type=?", [id, typeNum], async (err, result) => {
             if (err) {
                 console.log(err)
@@ -169,7 +169,8 @@ const onLoginBySns = (req, res) => {
                         id: result[0].id,
                         user_level: result[0].user_level,
                         phone: result[0].phone,
-                        profile_img: result[0].profile_img
+                        profile_img: result[0].profile_img,
+                        type: typeNum
                     },
                         jwtSecret,
                         {
@@ -185,42 +186,7 @@ const onLoginBySns = (req, res) => {
                     })
                     return response(req, res, 200, result[0].nickname + ' 님 환영합니다.', result[0]);
                 } else {//신규유저
-                    await db.query("INSERT INTO user_table (id, name, nickname , phone, user_level, type,profile_img) VALUES (?,  ?, ?, ?, ?, ?, ?)", [id, name, nickname, phone, user_level, typeNum, profile_img], async (err, result2) => {
-                        if (err) {
-                            console.log(err)
-                            return response(req, res, -200, "서버 에러 발생", [])
-                        } else {
-                            await db.query("UPDATE user_table SET sort=? WHERE pk=?", [result2?.insertId, result2?.insertId], async (err, resultup) => {
-                                if (err) {
-                                    console.log(err)
-                                    response(req, res, -200, "회원 추가 실패", [])
-                                }
-                                else {
-                                    let token = jwt.sign({
-                                        pk: result2?.insertId,
-                                        nickname: nickname,
-                                        id: id,
-                                        user_level: user_level,
-                                        phone: phone,
-                                        profile_img: profile_img
-                                    },
-                                        jwtSecret,
-                                        {
-                                            expiresIn: '600m',
-                                            issuer: 'fori',
-                                        });
-                                    res.cookie("token", token, { httpOnly: true, maxAge: 60 * 60 * 1000 * 10 });
-                                    db.query('UPDATE user_table SET last_login=? WHERE pk=?', [returnMoment(), result2?.insertId], (err, result) => {
-                                        if (err) {
-                                            console.log(err)
-                                            return response(req, res, -200, "서버 에러 발생", [])
-                                        }
-                                    })
-                                    return response(req, res, 200, nickname + ' 님 환영합니다.', { pk: result2?.insertId, id, typeNum, name, nickname, phone, user_level, profile_img });
-                                }
-                            })
-                        }
-                    })
+                    return response(req, res, 50, '신규회원 입니다.', []);
                 }
             }
         })
@@ -468,6 +434,7 @@ const sendSms = (req, res) => {
         let receiver = req.body.receiver;
         const content = req.body.content;
         sendAligoSms({ receivers: receiver, message: content }).then((result) => {
+            console.log(result)
             if (result.result_code == '1') {
                 return response(req, res, 100, "success", [])
             } else {
@@ -1398,12 +1365,13 @@ const updateVideo = (req, res) => {
 }
 const addNotice = (req, res) => {
     try {
-        const { title, note, user_pk } = req.body;
-        db.query("INSERT INTO notice_table ( title, note,user_pk) VALUES (?, ?, ?)", [title, note, user_pk], async (err, result) => {
+        const { title, note, url, user_pk } = req.body;
+        db.query("INSERT INTO notice_table ( title, note, url, user_pk) VALUES (?, ?, ?, ?)", [title, note, url, user_pk], async (err, result) => {
             if (err) {
                 console.log(err)
                 return response(req, res, -200, "서버 에러 발생", [])
             } else {
+                sendAlarm(title, "", url, "notice", result.insertId);
                 await db.query("UPDATE notice_table SET sort=? WHERE pk=?", [result?.insertId, result?.insertId], (err, resultup) => {
                     if (err) {
                         console.log(err)
@@ -1423,8 +1391,8 @@ const addNotice = (req, res) => {
 }
 const updateNotice = (req, res) => {
     try {
-        const { title, note, pk } = req.body;
-        db.query("UPDATE notice_table SET  title=?, note=? WHERE pk=?", [title, note, pk], (err, result) => {
+        const { title, note, url, pk } = req.body;
+        db.query("UPDATE notice_table SET  title=?, note=?, url=? WHERE pk=?", [title, note, url, pk], (err, result) => {
             if (err) {
                 console.log(err)
                 return response(req, res, -200, "서버 에러 발생", [])
@@ -1441,17 +1409,17 @@ const updateNotice = (req, res) => {
 const addAlarm = (req, res) => {
     try {
         // 바로할지, 0-1, 요일, 시간, 
-        const { title, note, type, start_date, days, time } = req.body;
+        const { title, url, note, type, start_date, days, time } = req.body;
 
 
-        db.query("INSERT INTO alarm_table (title, note, type, start_date, days, time) VALUES (?, ?, ?, ?, ?, ?)", [title, note, type, start_date, days, time], async (err, result) => {
+        db.query("INSERT INTO alarm_table (title, url, note, type, start_date, days, time) VALUES (?, ?, ?, ?, ?, ?, ?)", [title, url, note, type, start_date, days, time], async (err, result) => {
             if (err) {
                 console.log(err)
                 response(req, res, -200, "알람 추가 실패", [])
             }
             else {
                 if (type == 0) {
-                    sendAlarm(title, note, "alarm", result.insertId);
+                    sendAlarm(title, note, url, "alarm", result.insertId);
                     insertQuery("INSERT INTO alarm_log_table (title, note, item_table, item_pk) VALUES (?, ?, ?, ?)", [title, note, "alarm", result.insertId])
                 }
                 await db.query("UPDATE alarm_table SET sort=? WHERE pk=?", [result.insertId, result.insertId], (err, result) => {
@@ -1473,8 +1441,8 @@ const addAlarm = (req, res) => {
 const updateAlarm = (req, res) => {
     try {
         // 바로할지, 0-1, 요일, 시간, 
-        const { title, note, type, start_date, days, time, pk } = req.body;
-        db.query("UPDATE alarm_table SET title=?, note=?, type=?, start_date=?, days=?, time=? WHERE pk=?", [title, note, type, start_date, days, time, pk], (err, result) => {
+        const { title, note, url, type, start_date, days, time, pk } = req.body;
+        db.query("UPDATE alarm_table SET title=?, note=?, url=? type=?, start_date=?, days=?, time=? WHERE pk=?", [title, note, url, type, start_date, days, time, pk], (err, result) => {
             if (err) {
                 console.log(err)
                 response(req, res, -200, "알람 수정 실패", [])
@@ -1850,11 +1818,11 @@ const updateSubscribeContent = (req, res) => {
 
 const getItems = (req, res) => {
     try {
-        let { level, category_pk, status, user_pk, keyword, limit, page, page_cut, master_pk } = req.query;
+        let { level, category_pk, status, user_pk, keyword, limit, page, page_cut, master_pk, order } = req.query;
         let table = req.query.table ?? "user";
         let sql = `SELECT * FROM ${table}_table `;
         let pageSql = `SELECT COUNT(*) FROM ${table}_table `;
-
+        let orderSql = ` ORDER BY ${order ? order : 'sort'} DESC `
         let whereStr = " WHERE 1=1 ";
         if (level) {
             whereStr += ` AND user_level=${level} `;
@@ -1878,7 +1846,8 @@ const getItems = (req, res) => {
             page_cut = 15;
         }
         pageSql = pageSql + whereStr;
-        sql = sql + whereStr + " ORDER BY sort DESC ";
+
+        sql = sql + whereStr + orderSql;
         if (limit && !page) {
             sql += ` LIMIT ${limit} `;
         }

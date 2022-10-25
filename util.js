@@ -7,11 +7,15 @@ const fcmNode = require("fcm-node");
 const serviceAccount = require("./config/privatekey_firebase.json");
 const { insertQuery } = require('./query-util');
 const firebaseToken = 'fV0vRpDpTfCnY_VggFEgN7:APA91bHdHP6ilBpe9Wos5Y72SXFka2uAM3luANewGuw7Bx2XGnvUNjK5e5k945xwcXpW8NNei3LEaBtKT2_2A6naix8Wg5heVik8O2Aop_fu8bUibnGxuCe3RLQDtHNrMeC5gmgGRoVh';
-const fcmServerKey = "AAAARkqeNh4:APA91bFlUncwo8bVajlO-QSOghwTsfIrvl_3CcRX-oX601heEYinX3YjpxYpxcslxhzUuyPAWPc-oG-CqvQmsTPFeViWtToMJAMfjLQ_KPyI4VOEhHyL54eWMezNuI_bvPDZZdtW4Rlb";
+const fcmServerKey = "AAAAyc6UIaw:APA91bFEm_fc-0_cA8ZrxvB078OAhHRds_bPLuP3x9I6AT25Y-NwkOgKCqnbFvhvnSGajo3XAiOaOZkxGLl1mL8flZrJ29K2_k9nRR0NOTG4kcF0Pd4e33XcqvUFV1w4T-UAlE5oeuLY";
 firebase.initializeApp({
     credential: firebase.credential.cert(serviceAccount)
 });
-const sendAlarm = (title, note, table, pk) => {
+const sendAlarm = (title, note, url, table, pk) => {
+    console.log(title)
+    console.log(note)
+    console.log(table)
+    console.log(pk)
     let fcm = new fcmNode(fcmServerKey)
     let message = {
         to: '/topics/' + 'masterpick',
@@ -19,7 +23,8 @@ const sendAlarm = (title, note, table, pk) => {
         "priority": "high",
         notification: {
             title: (table == 'notice' ? '공지사항: ' : '') + title,
-            body: note,
+            body: (table == 'notice' ? '' : note),
+            url: url ?? '/',
             click_action: "FLUTTER_NOTIFICATION_CLICK",
             badge: "1",
             "sound": "default"
@@ -28,10 +33,10 @@ const sendAlarm = (title, note, table, pk) => {
             table: table,
             pk: pk.toString(),
             title: (table == 'notice' ? '공지사항 ' : '') + title,
-            body: note
+            body: (table == 'notice' ? '' : note),
+            url: url ?? '/'
         }
     }
-    //const options = { priority: 'high', timeToLive: 60 * 60 * 24 };
     fcm.send(message, (err, res) => {
         if (err) {
             console.log("Error sending message:", err);
@@ -70,11 +75,11 @@ const formatPhoneNumber = (input) => {
     const cleanInput = input.replaceAll(/[^0-9]/g, "");
     let result = "";
     const length = cleanInput.length;
-    if(length === 8) {
+    if (length === 8) {
         result = cleanInput.replace(/(\d{4})(\d{4})/, '$1-$2');
-    } else if(cleanInput.startsWith("02") && (length === 9 || length === 10)) {
+    } else if (cleanInput.startsWith("02") && (length === 9 || length === 10)) {
         result = cleanInput.replace(/(\d{2})(\d{3,4})(\d{4})/, '$1-$2-$3');
-    } else if(!cleanInput.startsWith("02") && (length === 10 || length === 11)) {
+    } else if (!cleanInput.startsWith("02") && (length === 10 || length === 11)) {
         result = cleanInput.replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
     } else {
         result = undefined;
@@ -266,5 +271,5 @@ module.exports = {
     logRequestResponse, logResponse, logRequest,
     getUserPKArrStrWithNewPK, isNotNullOrUndefined,
     namingImagesPath, getSQLnParams,
-    nullResponse, lowLevelResponse, response, removeItems, returnMoment,formatPhoneNumber,sendAlarm
+    nullResponse, lowLevelResponse, response, removeItems, returnMoment, formatPhoneNumber, sendAlarm
 }
