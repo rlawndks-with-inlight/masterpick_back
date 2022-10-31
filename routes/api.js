@@ -154,12 +154,12 @@ const onLoginById = async (req, res) => {
                                 return response(req, res, -200, "서버 에러 발생", [])
                             }
                         } else {
-                            return response(req, res, -100, "없는 회원입니다.", [])
+                            return response(req, res, -100, "아이디 또는 비밀번호를 확인해주세요.", [])
 
                         }
                     })
                 } else {
-                    return response(req, res, -100, "없는 회원입니다.", [])
+                    return response(req, res, -100, "아이디 또는 비밀번호를 확인해주세요.", [])
                 }
             }
         })
@@ -493,7 +493,7 @@ const findAuthByIdAndPhone = (req, res) => {
                 if (result.length > 0) {
                     return response(req, res, 100, "success", result[0]);
                 } else {
-                    return response(req, res, -50, "등록되지 않은 회원입니다.", []);
+                    return response(req, res, -50, "아이디 또는 비밀번호를 확인해주세요.", []);
                 }
             }
         })
