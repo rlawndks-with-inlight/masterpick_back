@@ -53,12 +53,25 @@ const onSignUp = async (req, res) => {
         const type_num = req.body.type_num ?? 0;
         const consulting_note = req.body.consulting_note;
         //중복 체크 
-        let sql = "SELECT * FROM user_table WHERE id=?"
+        let sql = "SELECT * FROM user_table WHERE id=? OR nickname=?"
 
-        db.query(sql, [id], (err, result) => {
-            if (result.length > 0)
-                response(req, res, -200, "ID가 중복됩니다.", [])
-            else {
+        db.query(sql, [id, nickname], (err, result) => {
+            if (result.length > 0) {
+                let same_type = "";
+                for (var i = 0; i < result.length; i++) {
+                    if (result[i].id == id) {
+                        same_type = "아이디";
+                        break;
+                    }
+                    if (result[i].nickname == nickname) {
+                        same_type = "닉네임";
+                        break;
+                    }
+                }
+                if (i != result.length) {
+                    return response(req, res, -200, `${same_type}가 중복됩니다.`, [])
+                }
+            } else {
                 crypto.pbkdf2(pw, salt, saltRounds, pwBytes, 'sha512', async (err, decoded) => {
                     // bcrypt.hash(pw, salt, async (err, hash) => {
                     let hash = decoded.toString('base64')
@@ -100,7 +113,7 @@ const onSignUp = async (req, res) => {
 const onLoginById = async (req, res) => {
     try {
         let { id, pw } = req.body;
-        if(!id){
+        if (!id) {
             return response(req, res, -100, "필요값이 비어있습니다.", [])
         }
         db.query('SELECT * FROM user_table WHERE id=?', [id], async (err, result1) => {
@@ -160,7 +173,7 @@ const onLoginBySns = (req, res) => {
     try {
         let { id, typeNum, name, nickname, phone, user_level, profile_img } = req.body;
         console.log(req.body)
-        if(!id){
+        if (!id) {
             return response(req, res, -100, "필요값이 비어있습니다.", []);
         }
         db.query("SELECT * FROM user_table WHERE id=? AND type=?", [id, typeNum], async (err, result) => {
@@ -295,7 +308,7 @@ const editMyInfo = (req, res) => {
                     console.log(err);
                     response(req, res, -100, "서버 에러 발생", [])
                 } else {
-                    if (result.length > 0 || type!=0 ) {
+                    if (result.length > 0 || type != 0) {
                         if (newPw) {
                             await crypto.pbkdf2(newPw, salt, saltRounds, pwBytes, 'sha512', async (err, decoded) => {
                                 // bcrypt.hash(pw, salt, async (err, hash) => {
