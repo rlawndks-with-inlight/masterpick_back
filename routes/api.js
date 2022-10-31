@@ -379,6 +379,22 @@ const editMyInfo = (req, res) => {
         return response(req, res, -200, "서버 에러 발생", [])
     }
 }
+const onResign = (req, res) => {
+    try {
+        let {id} = req.body;
+        db.query("DELETE FROM user_table WHERE id=?",[id],(err, result)=>{
+            if (err) {
+                console.log(err)
+                return response(req, res, -100, "서버 에러 발생", []);
+            } else {
+                return response(req, res, 100, "success", []);
+            }
+        })
+    } catch (e) {
+        console.log(e)
+        return response(req, res, -200, "서버 에러 발생", [])
+    }
+}
 const kakaoCallBack = (req, res) => {
     try {
         const token = req.body.token;
@@ -2156,5 +2172,5 @@ module.exports = {
     getUsers, getOneWord, getOneEvent, getItems, getItem, getHomeContent, getSetting, getVideoContent, getChannelList, getVideo, onSearchAllItem, findIdByPhone, findAuthByIdAndPhone, getMasterContents, getMainContent, getUserContent, getMasterContent,//select
     addMaster, onSignUp, addOneWord, addOneEvent, addItem, addIssueCategory, addNoteImage, addVideo, addChannel, addFeatureCategory, addNotice, addSubscribeContent, addSubscribe, addMustRead, addAlarm, //insert 
     updateUser, updateItem, updateIssueCategory, updateVideo, updateMaster, updateSetting, updateStatus, updateChannel, updateFeatureCategory, updateNotice, onTheTopItem, changeItemSequence, changePassword, updateMasterContent, updateSubscribeContent, editMainContent, updateMustRead, updateAlarm,//update
-    deleteItem
+    deleteItem, onResign
 };
