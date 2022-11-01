@@ -1872,7 +1872,15 @@ const getItems = (req, res) => {
             whereStr += ` AND user_pk=${user_pk} `;
         }
         if (keyword) {
-            whereStr += ` AND title LIKE '%${keyword}%' `;
+            if(table=='user'){
+                whereStr += ` AND (id LIKE '%${keyword}%' OR name LIKE '%${keyword}%' OR nickname LIKE '%${keyword}%')`;
+            }else if(table=='master'){
+                whereStr += ` AND (name LIKE '%${keyword}%' OR motto LIKE '%${keyword}%')`;
+            }else if(table=='master_subscribe'){
+                whereStr += ` AND (name LIKE '%${keyword}%')`;
+            }else{
+                whereStr += ` AND title LIKE '%${keyword}%' `;
+            }
         }
         if (master_pk) {
             whereStr += ` AND master_pk=${master_pk} `;
@@ -2000,20 +2008,22 @@ const editMainContent = (req, res) => {
             zColumn = [value];
             sql = `UPDATE main_table SET best_list=? WHERE pk=?`;
         } else if (category == 'banner_img') {
-            if (!req.files.recommendation_banner && !req.files.banner) {
+            if (!req.files.recommendation_banner && !req.files.banner && !req.files.yield_banner) {
                 return response(req, res, 100, "success", [])
             } else {
-                if (req.files.recommendation_banner && req.files.banner) {
-                    sql = `UPDATE main_table SET recommendation_banner_img=?, banner_img=? WHERE pk=?`;
-                    let image1 = '/image/' + req.files.recommendation_banner[0].fieldname + '/' + req.files.recommendation_banner[0].filename;
-                    let image2 = '/image/' + req.files.banner[0].fieldname + '/' + req.files.banner[0].filename;
-                    zColumn = [image1, image2];
-                } else {
-                    key = req.files.recommendation_banner ? 'recommendation_banner_img=?' : 'banner_img=?';
-                    value = '/image/' + req.files[`${key.substring(0, key.length - 6)}`][0].fieldname + '/' + req.files[`${key.substring(0, key.length - 6)}`][0].filename
-                    sql = `UPDATE main_table SET ${key} WHERE pk=?`
-                    zColumn = [value];
+                sql = `UPDATE main_table SET `;
+                let img_name_list = ['banner','recommendation_banner','yield_banner'];
+                for(var i = 0;i<img_name_list.length;i++){
+                    if(req.files[img_name_list[i]]){
+                        if(zColumn.length>0){
+                            sql += ',';
+                        }
+                        sql += ` ${img_name_list[i]}_img=? `;
+                        let image =  '/image/' + req.files[img_name_list[i]][0].fieldname + '/' + req.files[img_name_list[i]][0].filename;
+                        zColumn.push(image);
+                    }
                 }
+                sql += 'WHERE pk=?';
             }
         } else {
             return response(req, res, -100, "fail", [])

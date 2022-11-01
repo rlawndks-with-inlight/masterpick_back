@@ -64,7 +64,7 @@ router.get('/items', getItems);
 router.get('/item', getItem);
 router.get('/gethomecontent', getHomeContent);
 router.post('/updatesetting', upload.single('master'), updateSetting);
-router.post('/editmaincontent', upload.fields([{ name: 'main' }, { name: 'recommendation_banner' }, { name: 'banner' }]), editMainContent);
+router.post('/editmaincontent', upload.fields([{ name: 'main' }, { name: 'recommendation_banner' }, { name: 'banner' }, { name: 'yield_banner' }]), editMainContent);
 router.get('/getmaincontent', getMainContent);
 router.get('/setting', getSetting);
 router.post('/updatestatus', updateStatus);
