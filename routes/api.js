@@ -1656,20 +1656,18 @@ const getUserSubscribeMasters = (pk) => {
 const getMasterContents = async (req, res) => {
     try {
         let { table, pk, order, desc, is_subscribe, user_pk, overlap_list, status } = req.body;
-
-        console.log(req.body)
         let sql = "";
         let tableSelectStr = ``;
         if (table == 'master_event') {
-            tableSelectStr = `${table}_table.pk, ${table}_table.name,${table}_table.level,${table}_table.date `;
+            tableSelectStr = `${table}_table.pk, ${table}_table.name, ${table}_table.level, ${table}_table.date `;
         } else if (table == 'master_yield') {
-            tableSelectStr = `${table}_table.pk, ${table}_table.name,${table}_table.purchase_price,${table}_table.sell_price,${table}_table.yield,${table}_table.period,${table}_table.date `;
+            tableSelectStr = `${table}_table.pk, ${table}_table.name, ${table}_table.purchase_price, ${table}_table.sell_price, ${table}_table.yield, ${table}_table.period, ${table}_table.date `;
         } else if (table == 'master_subscribe') {
-            tableSelectStr = `${table}_table.pk, ${table}_table.name,${table}_table.base_price,${table}_table.capture_date,${table}_table.exchange_date,${table}_table.existing_possession ,${table}_table.date `;
+            tableSelectStr = `${table}_table.pk, ${table}_table.name, ${table}_table.base_price, ${table}_table.capture_date, ${table}_table.exchange_date, ${table}_table.existing_possession ,${table}_table.date `;
         } else {
-            return response(req, res, -200, "잘못된 데이터 입니다.", [])
+            return response(req, res, -200, "잘못된 데이터 입니다.", []);
         }
-        let selectStr = `SELECT ${tableSelectStr}, master_table.name AS master_name FROM ${table}_table LEFT JOIN master_table ON ${table}_table.master_pk = master_table.pk `
+        let selectStr = `SELECT ${tableSelectStr}, master_table.name AS master_name, master_table.yield_banner AS yield_banner FROM ${table}_table LEFT JOIN master_table ON ${table}_table.master_pk = master_table.pk `
         let whereStr = "";
         let orderStr = "";
         if (status) {
@@ -1685,49 +1683,59 @@ const getMasterContents = async (req, res) => {
 
         }
         if (order) {
-            orderStr = ` ORDER BY ${table}_table.${order} ${desc ? 'DESC' : 'ASC'}`
+            orderStr = ` ORDER BY ${table}_table.${order} ${desc ? 'DESC' : 'ASC'}`;
         }
         sql = `${selectStr} ${whereStr} ${orderStr}`;
-        db.query(sql, (err, result) => {
-            if (err) {
-                console.log(err)
-                return response(req, res, -200, "서버 에러 발생", [])
-            } else {
-                return response(req, res, 100, "success", result)
-            }
-        })
+        let contents = await dbQueryList(sql);
+        contents = contents?.result;
+        let master = {};
+        if(pk){
+            master = await dbQueryList(`SELECT * FROM master_table WHERE pk=${pk}`);
+            master = master?.result[0];
+        }
+        
+        return response(req, res, 100, "success", {data:contents, master:master});
+
     } catch (err) {
         console.log(err)
         return response(req, res, -200, "서버 에러 발생", [])
     }
 }
-const updateMasterContent = (req, res) => {
+const updateMasterContent = async(req, res) => {
     try {
-        console.log(req.body)
-        let { list, columns, table, master_pk } = req.body;
+        let { list, columns, table, master_pk, } = req.body;
 
         if (!columns || !table || !master_pk) {
             return response(req, res, -100, "필요값이 비어있습니다.", [])
         } else {
+            if(typeof columns =='string'){
+                columns = JSON.parse(columns);
+            }
+            if(typeof list =='string'){
+                list = JSON.parse(list);
+            }
             let joins = columns.join();
-            db.query(`DELETE FROM ${table}_table WHERE master_pk=?`, [master_pk], async (err, result) => {
-                if (err) {
-                    console.log(err)
-                    return response(req, res, -200, "서버 에러 발생", [])
-                } else {
-                    await db.query(`INSERT INTO ${table}_table (${joins}) VALUES ?`, [list], (err, result) => {
-                        if (err) {
-                            console.log(err)
-                            return response(req, res, -200, "서버 에러 발생", [])
-                        } else {
-                            return response(req, res, 100, "success", result)
-                        }
-                    })
+            db.beginTransaction();
+            if(req.file){
+                let image = '/image/' + req.file.fieldname + '/' + req.file.filename;
+                let image_sql = "";
+                if(table=='master_yield'){
+                    image_sql = `UPDATE master_table SET yield_banner=? WHERE pk=${master_pk}`;
                 }
-            })
+                if(table=='master_event'){
+
+                }
+                let image_result = await insertQuery(image_sql,[image]);
+            }
+            let result1 = await insertQuery(`DELETE FROM ${table}_table WHERE master_pk=?`,[master_pk]);
+            let result2 = await insertQuery(`INSERT INTO ${table}_table (${joins}) VALUES ?`,[list]);
+
+            await db.commit();
+            return response(req, res, 100, "success", []);
         }
     } catch (err) {
         console.log(err)
+        await db.rollback();
         return response(req, res, -200, "서버 에러 발생", [])
     }
 }

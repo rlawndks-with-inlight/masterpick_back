@@ -57,7 +57,7 @@ router.get('/oneword', getOneWord);
 router.get('/oneevent', getOneEvent);
 router.post('/getmastercontents', getMasterContents);
 router.get('/getmastercontent', getMasterContent);
-router.post('/updatemastercontent', updateMasterContent);
+router.post('/updatemastercontent', upload.single('master'), updateMasterContent);
 router.post('/addsubscribecontent', upload.fields([{ name: 'major_bussiness_img' }, { name: 'capital_change_img' }, { name: 'investment_indicator_img' }]), addSubscribeContent);
 router.post('/updatesubscribecontent', upload.fields([{ name: 'major_bussiness_img' }, { name: 'capital_change_img' }, { name: 'investment_indicator_img' }]), updateSubscribeContent);
 router.get('/items', getItems);
